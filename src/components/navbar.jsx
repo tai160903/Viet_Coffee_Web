@@ -1,0 +1,292 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import {
+  Menu,
+  X,
+  Search,
+  ShoppingCart,
+  User,
+  Heart,
+  MapPin,
+  Phone,
+  Clock,
+  Coffee,
+  Home,
+  UtensilsCrossed,
+  Info,
+  Mail,
+} from "lucide-react";
+
+const Navbar = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [cartCount, setCartCount] = useState(3); // Mock cart count
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const location = useLocation();
+
+  // Handle scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Navigation items
+  const navItems = [
+    { path: "/", name: "Trang Chủ", nameEn: "Home", icon: Home },
+    { path: "/menu", name: "Thực Đơn", nameEn: "Menu", icon: UtensilsCrossed },
+    { path: "/about", name: "Về Chúng Tôi", nameEn: "About", icon: Info },
+    { path: "/location", name: "Địa Chỉ", nameEn: "Location", icon: MapPin },
+    { path: "/contact", name: "Liên Hệ", nameEn: "Contact", icon: Mail },
+  ];
+
+  const isActive = (path) => location.pathname === path;
+
+  return (
+    <>
+      {/* Top Bar */}
+      <div className="bg-gradient-to-r from-amber-800 to-amber-900 text-white py-2 px-4 text-sm">
+        <div className="container mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              <span>Thứ 2-6: 7:00-19:00 | Thứ 7-CN: 8:00-20:00</span>
+            </div>
+            <div className="hidden md:flex items-center gap-2">
+              <Phone className="w-4 h-4" />
+              <span>0123 456 789</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4" />
+            <span className="hidden sm:inline">123 Nguyễn Huệ, Q1, TP.HCM</span>
+            <span className="sm:hidden">Q1, TP.HCM</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Navbar */}
+      <nav
+        className={`sticky top-0 z-50 transition-all duration-300 ${
+          isScrolled
+            ? "bg-white/95 backdrop-blur-lg shadow-lg border-b border-amber-100"
+            : "bg-white/90 backdrop-blur-sm"
+        }`}
+      >
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-20">
+            {/* Logo */}
+            <Link to="/" className="flex items-center gap-3 group">
+              <div className="w-12 h-12 bg-gradient-to-br from-amber-600 to-amber-700 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Coffee className="w-6 h-6 text-white" />
+              </div>
+              <div className="hidden sm:block">
+                <div className="text-xl font-bold text-gray-800 group-hover:text-amber-700 transition-colors">
+                  Cà Phê Việt
+                </div>
+                <div className="text-xs text-gray-600">
+                  Authentic Vietnamese Coffee
+                </div>
+              </div>
+            </Link>
+
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center space-x-1">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`flex items-center gap-2 px-4 py-3 rounded-2xl font-medium transition-all duration-300 ${
+                      isActive(item.path)
+                        ? "bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg"
+                        : "text-gray-700 hover:bg-amber-50 hover:text-amber-700"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Right Side Actions */}
+            <div className="flex items-center gap-3">
+              {/* Search */}
+              <div className="relative hidden md:block">
+                {showSearch ? (
+                  <div className="flex items-center">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Tìm kiếm..."
+                      className="w-64 px-4 py-2 pl-10 pr-4 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                      autoFocus
+                    />
+                    <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                    <button
+                      onClick={() => {
+                        setShowSearch(false);
+                        setSearchQuery("");
+                      }}
+                      className="ml-2 p-2 text-gray-500 hover:text-gray-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setShowSearch(true)}
+                    className="p-3 text-gray-600 hover:text-amber-700 hover:bg-amber-50 rounded-full transition-all duration-300"
+                  >
+                    <Search className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Favorites */}
+              <Link
+                to="/favorites"
+                className="p-3 text-gray-600 hover:text-red-500 hover:bg-red-50 rounded-full transition-all duration-300 relative"
+              >
+                <Heart className="w-5 h-5" />
+              </Link>
+
+              {/* Cart */}
+              <Link
+                to="/cart"
+                className="p-3 text-gray-600 hover:text-amber-700 hover:bg-amber-50 rounded-full transition-all duration-300 relative"
+              >
+                <ShoppingCart className="w-5 h-5" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+
+              {/* User Account */}
+              <Link
+                to="/account"
+                className="hidden sm:flex p-3 text-gray-600 hover:text-amber-700 hover:bg-amber-50 rounded-full transition-all duration-300"
+              >
+                <User className="w-5 h-5" />
+              </Link>
+
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="lg:hidden p-3 text-gray-600 hover:text-amber-700 hover:bg-amber-50 rounded-full transition-all duration-300"
+              >
+                {isOpen ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <Menu className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        <div
+          className={`lg:hidden transition-all duration-300 ease-in-out ${
+            isOpen
+              ? "max-h-screen opacity-100"
+              : "max-h-0 opacity-0 overflow-hidden"
+          }`}
+        >
+          <div className="bg-white border-t border-amber-100 shadow-lg">
+            <div className="container mx-auto px-4 py-4">
+              {/* Mobile Search */}
+              <div className="mb-4 md:hidden">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Tìm kiếm món ăn, đồ uống..."
+                    className="w-full px-4 py-3 pl-10 rounded-2xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  />
+                  <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                </div>
+              </div>
+
+              {/* Mobile Navigation Items */}
+              <div className="space-y-2">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setIsOpen(false)}
+                      className={`flex items-center gap-4 px-4 py-4 rounded-2xl font-medium transition-all duration-300 ${
+                        isActive(item.path)
+                          ? "bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-lg"
+                          : "text-gray-700 hover:bg-amber-50 hover:text-amber-700"
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <div>
+                        <div>{item.name}</div>
+                        <div className="text-xs opacity-70">{item.nameEn}</div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+
+              {/* Mobile Account Actions */}
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <div className="grid grid-cols-2 gap-3">
+                  <Link
+                    to="/account"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-amber-50 text-amber-700 rounded-2xl font-medium hover:bg-amber-100 transition-colors"
+                  >
+                    <User className="w-4 h-4" />
+                    Tài Khoản
+                  </Link>
+                  <Link
+                    to="/favorites"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 rounded-2xl font-medium hover:bg-red-100 transition-colors"
+                  >
+                    <Heart className="w-4 h-4" />
+                    Yêu Thích
+                  </Link>
+                </div>
+              </div>
+
+              {/* Contact Info */}
+              <div className="mt-6 pt-4 border-t border-gray-200 space-y-3">
+                <div className="flex items-center gap-3 text-gray-600">
+                  <Phone className="w-4 h-4" />
+                  <span>0123 456 789</span>
+                </div>
+                <div className="flex items-center gap-3 text-gray-600">
+                  <MapPin className="w-4 h-4" />
+                  <span>123 Nguyễn Huệ, Quận 1, TP.HCM</span>
+                </div>
+                <div className="flex items-center gap-3 text-gray-600">
+                  <Clock className="w-4 h-4" />
+                  <span>Thứ 2-6: 7:00-19:00 | Thứ 7-CN: 8:00-20:00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </>
+  );
+};
+
+export default Navbar;
