@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Coffee,
@@ -12,11 +12,27 @@ import {
   Heart,
   ArrowRight,
 } from "lucide-react";
+import ProductService from "../services/product.service";
 
 function Menu() {
   const [activeCategory, setActiveCategory] = useState("coffee");
+  const [products, setProducts] = useState([]);
 
-  // Enhanced category data with icons
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const response = await ProductService.getProducts();
+      setProducts(response);
+    } catch (error) {
+      console.error("Error fetching products:", error.message);
+      setProducts([]);
+    }
+  };
+
+  console.log("Products:", products);
   const categories = [
     {
       id: "coffee",

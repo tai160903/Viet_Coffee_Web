@@ -1,19 +1,25 @@
 import { createBrowserRouter } from "react-router-dom";
-import ManagerLayout from "../components/ManagerLayout";
+import MainLayout from "../components/mainLayout";
 import Home from "../pages/Home";
-import Dashboard from "../pages/manager/dashboard";
-import Product from "../pages/manager/Product";
-import Order from "../pages/manager/Order";
-import Staff from "../pages/manager/Staff";
+import Register from "../pages/Register";
+import Login from "../pages/Login";
 import Menu from "../pages/Menu";
 import Detail from "../pages/Detail";
-import MainLayout from "../components/mainLayout";
-import Login from "../pages/Login";
-import Register from "../pages/Register";
 import Cart from "../pages/Cart";
 import Payment from "../pages/Payment";
-import About from "../pages/About";
 import Contact from "../pages/Contact";
+import Profile from "../pages/Profile";
+import About from "../pages/About";
+import ManagerLayout from "../components/ManagerLayout";
+import Dashboard from "../pages/manager/Dashboard";
+import Product from "../pages/manager/Product";
+import Staff from "../pages/manager/Staff";
+import Inventory from "../pages/manager/Inventory";
+import MenuManagement from "../pages/manager/MenuManager";
+import DashboardPOS from "../pages/pos/DashboardPOS";
+import Orders from "../pages/pos/Orders";
+import Reports from "../pages/pos/Reports";
+import Sales from "../pages/pos/Sales";
 
 const router = createBrowserRouter([
   {
@@ -59,6 +65,10 @@ const router = createBrowserRouter([
     element: <Register />,
   },
   {
+    path: "/profile",
+    element: <Profile />,
+  },
+  {
     path: "/manager",
     element: <ManagerLayout />,
     children: [
@@ -71,14 +81,41 @@ const router = createBrowserRouter([
         element: <Product />,
       },
       {
-        path: "orders",
-        element: <Order />,
+        path: "inventory",
+        element: <Inventory />,
+      },
+      {
+        path: "menu-management",
+        element: <MenuManagement />,
       },
       {
         path: "staffs",
         element: <Staff />,
       },
     ],
+  },
+  {
+    path: "/pos",
+    children: [
+      {
+        path: "",
+        element: <DashboardPOS />,
+      },
+      {
+        path: "orders",
+        element: <Orders />,
+      },
+      {
+        path: "reports",
+        element: <Reports />,
+      },
+      { path: "sales", element: <Sales /> },
+    ],
+  },
+
+  {
+    path: "*",
+    element: <h1>404</h1>,
   },
 ]);
 

@@ -1,4 +1,5 @@
 import { Clock, MapPin, Coffee, Users } from "lucide-react";
+import cafeExperienceImage from "../assets/images/cafe-experience.jpg";
 
 export function CafeExperienceSection() {
   return (
@@ -21,7 +22,7 @@ export function CafeExperienceSection() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
             <img
-              src="/placeholder.svg?height=500&width=600"
+              src={cafeExperienceImage}
               alt="Nội Thất Quán Cà Phê Việt Nam"
               className="rounded-2xl shadow-2xl"
             />

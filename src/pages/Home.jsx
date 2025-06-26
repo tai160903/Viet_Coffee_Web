@@ -12,6 +12,7 @@ import {
 import { CafeExperienceSection } from "../components/cafe-experience";
 // images
 import heroImage from "../assets/images/hero-coffee.jpg";
+import aboutImage from "../assets/images/about-coffee.jpg";
 
 function Home() {
   return (
@@ -148,7 +149,7 @@ function Home() {
               <div key={product.id} className="group cursor-pointer">
                 <div className="relative overflow-hidden rounded-2xl mb-6 bg-gradient-to-br from-gray-100 to-gray-200">
                   <img
-                    src={`/placeholder.svg?height=320&width=280`}
+                    src="/placeholder.svg?height=400&width=300"
                     alt={product.name}
                     className="w-full h-80 object-cover transform group-hover:scale-110 transition-transform duration-500"
                   />
@@ -203,7 +204,7 @@ function Home() {
               <div className="relative">
                 <div className="absolute -inset-4 bg-gradient-to-r from-amber-400 to-amber-600 rounded-2xl blur opacity-20"></div>
                 <img
-                  src="/placeholder.svg?height=600&width=800"
+                  src={aboutImage || "/placeholder.svg?height=500&width=400"}
                   alt="Vườn Cà Phê Việt Nam"
                   className="relative rounded-2xl shadow-2xl"
                 />
