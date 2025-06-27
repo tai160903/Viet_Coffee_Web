@@ -5,115 +5,83 @@ import { useParams, Link } from "react-router-dom";
 import {
   Star,
   Heart,
-  Share2,
   Plus,
   Minus,
   ShoppingCart,
-  Clock,
   Coffee,
-  Droplets,
-  Thermometer,
-  Award,
-  Truck,
-  RotateCcw,
-  Shield,
   ChevronRight,
 } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { addToCart } from "../redux/cartSilce";
+import { toast } from "sonner";
+import ProductService from "../services/product.service";
+import sizeService from "../services/size.service";
+import cartService from "../services/cart.service";
 
 const Detail = () => {
   const { id } = useParams();
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [selectedImage, setSelectedImage] = useState(0);
-  const [quantity, setQuantity] = useState(1);
-  const [selectedSize, setSelectedSize] = useState("medium");
-  const [selectedTemperature, setSelectedTemperature] = useState("hot");
-  const [notes, setNotes] = useState("");
-  const [activeTab, setActiveTab] = useState("description");
-  const [isFavorite, setIsFavorite] = useState(false);
+  const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector((state) => state.auth);
 
-  // Mock product data with Vietnamese coffee focus
+  const [product, setProduct] = useState(null);
+  const [sizes, setSizes] = useState([]);
+  const [selectedSizeId, setSelectedSizeId] = useState(null);
+  const [selectedSize, setSelectedSize] = useState(null);
+
+  const [loading, setLoading] = useState(true);
+  const [quantity, setQuantity] = useState(1);
+  const [notes, setNotes] = useState("");
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [addingToCart, setAddingToCart] = useState(false);
+
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      const mockProduct = {
-        id: id,
-        name: "Cà Phê Phin Truyền Thống",
-        nameEn: "Traditional Vietnamese Drip Coffee",
-        description:
-          "Cà phê Việt Nam truyền thống pha bằng phin với sữa đặc, hương vị đậm đà đặc trưng",
-        longDescription: `
-          <p>Cà phê phin truyền thống là biểu tượng của văn hóa cà phê Việt Nam. Được pha chế bằng phin nhôm truyền thống với hạt cà phê Robusta và Arabica cao cấp từ Tây Nguyên.</p>
-          <p>Quy trình pha chế tỉ mỉ tạo nên hương vị đậm đà, thơm ngon với lớp crema mịn màng. Kết hợp với sữa đặc tạo nên vị ngọt tự nhiên đặc trưng.</p>
-          <p>Mỗi tách cà phê được pha chế cẩn thận bởi barista giàu kinh nghiệm, đảm bảo chất lượng và hương vị tuyệt hao.</p>
-        `,
-        basePrice: 25000,
-        images: [
-          "/placeholder.svg?height=400&width=400",
-          "/placeholder.svg?height=400&width=400",
-          "/placeholder.svg?height=400&width=400",
-          "/placeholder.svg?height=400&width=400",
-        ],
-        rating: 4.8,
-        reviews: 127,
-        prepTime: "5-7 phút",
-        category: "coffee",
-        popular: true,
-        sizes: [
-          {
-            id: "small",
-            name: "Nhỏ",
-            nameEn: "Small",
-            volume: "150ml",
-            price: 0,
-          },
-          {
-            id: "medium",
-            name: "Vừa",
-            nameEn: "Medium",
-            volume: "200ml",
-            price: 5000,
-          },
-          {
-            id: "large",
-            name: "Lớn",
-            nameEn: "Large",
-            volume: "250ml",
-            price: 10000,
-          },
-          {
-            id: "extra",
-            name: "Đặc Biệt",
-            nameEn: "Extra Large",
-            volume: "300ml",
-            price: 15000,
-          },
-        ],
-        temperatures: [
-          { id: "hot", name: "Nóng", nameEn: "Hot", icon: Thermometer },
-          { id: "iced", name: "Đá", nameEn: "Iced", icon: Droplets },
-        ],
-        notes: "",
-        attributes: {
-          origin: "Tây Nguyên, Việt Nam",
-          roastLevel: "Medium Dark",
-          caffeineContent: "Cao",
-          brewMethod: "Phin Filter",
-        },
-      };
-      setProduct(mockProduct);
-      setLoading(false);
-    }, 500);
+    if (id) {
+      fetchProduct();
+      fetchSizes();
+    }
   }, [id]);
+
+  // Update selectedSize object when selectedSizeId changes
+  useEffect(() => {
+    if (selectedSizeId) {
+      const size = sizes.find((s) => s.id === selectedSizeId);
+      setSelectedSize(size);
+    }
+  }, [selectedSizeId, sizes]);
+
+  const fetchProduct = async () => {
+    setLoading(true);
+    try {
+      const response = await ProductService.getProductById(id);
+      setProduct(response.data);
+    } catch (error) {
+      console.error("Error fetching product:", error);
+      toast.error("Không thể tải thông tin sản phẩm");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSizes = async () => {
+    try {
+      const response = await sizeService.getSizes();
+      setSizes(response.data);
+      if (response.data.length > 0) {
+        setSelectedSizeId(response.data[0].id);
+        setSelectedSize(response.data[0]);
+      }
+    } catch (error) {
+      console.error("Error fetching sizes:", error);
+      setSizes([]);
+      toast.error("Không thể tải thông tin kích cỡ");
+    }
+  };
 
   // Calculate total price
   const calculateTotalPrice = () => {
     if (!product) return 0;
-    const selectedSizeObj = product.sizes.find(
-      (size) => size.id === selectedSize
-    );
-    const sizePrice = selectedSizeObj ? selectedSizeObj.price : 0;
-    return (product.basePrice + sizePrice) * quantity;
+    const sizePrice = selectedSize?.extraPrice || 0;
+    return (product.price + sizePrice) * quantity;
   };
 
   // Handle quantity changes
@@ -121,17 +89,51 @@ const Detail = () => {
   const decrementQuantity = () => setQuantity((prev) => Math.max(1, prev - 1));
 
   // Handle add to cart
-  const handleAddToCart = () => {
-    const orderDetails = {
-      product: product.name,
-      size: selectedSize,
-      temperature: selectedTemperature,
-      notes: notes,
-      quantity,
-      totalPrice: calculateTotalPrice(),
-    };
-    console.log("Added to cart:", orderDetails);
-    // In real app, dispatch to cart context/redux
+  const handleAddToCart = async () => {
+    if (!product || !selectedSize) {
+      toast.error("Vui lòng chọn đầy đủ thông tin sản phẩm");
+      return;
+    }
+    console.log("Assa");
+    setAddingToCart(true);
+
+    try {
+      const customize = {
+        note: notes,
+        sizeId: selectedSizeId,
+        productId: product.id,
+        quantity: quantity,
+        customizeToppings: [],
+      };
+
+      if (isAuthenticated) {
+        console.log("Adding to cart with customization:", customize);
+
+        const response = await cartService.addToCart(customize);
+        console.log("Add to cart response:", response.data.cartItems);
+        if (response && response.data) {
+          dispatch(addToCart(response.data.cartItems));
+        }
+      }
+
+      toast.success(`Đã thêm ${quantity} ${product.name} vào giỏ hàng`);
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toast.error("Không thể thêm vào giỏ hàng. Vui lòng thử lại sau.");
+    } finally {
+      setAddingToCart(false);
+    }
+  };
+
+  // Toggle favorite status
+  const toggleFavorite = () => {
+    setIsFavorite(!isFavorite);
+
+    if (!isFavorite) {
+      toast.success(`Đã thêm ${product.name} vào danh sách yêu thích`);
+    } else {
+      toast.success(`Đã xóa ${product.name} khỏi danh sách yêu thích`);
+    }
   };
 
   if (loading) {
@@ -168,18 +170,12 @@ const Detail = () => {
             <div className="relative bg-white rounded-3xl shadow-xl overflow-hidden group">
               <div className="aspect-square relative">
                 <img
-                  src={product.images[selectedImage] || "/placeholder.svg"}
+                  src={product.image || "/placeholder.svg"}
                   alt={product.name}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
-                {product.popular && (
-                  <div className="absolute top-6 left-6 flex items-center gap-1 bg-red-500 text-white text-sm font-bold px-4 py-2 rounded-full">
-                    <Star className="w-4 h-4 fill-current" />
-                    Phổ Biến
-                  </div>
-                )}
                 <button
-                  onClick={() => setIsFavorite(!isFavorite)}
+                  onClick={toggleFavorite}
                   className={`absolute top-6 right-6 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
                     isFavorite
                       ? "bg-red-500 text-white"
@@ -191,27 +187,6 @@ const Detail = () => {
                   />
                 </button>
               </div>
-            </div>
-
-            {/* Thumbnail Images */}
-            <div className="flex gap-3 overflow-x-auto pb-2">
-              {product.images.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedImage(index)}
-                  className={`flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden border-2 transition-all duration-300 ${
-                    selectedImage === index
-                      ? "border-amber-500 shadow-lg"
-                      : "border-gray-200 hover:border-amber-300"
-                  }`}
-                >
-                  <img
-                    src={image || "/placeholder.svg"}
-                    alt={`View ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </button>
-              ))}
             </div>
           </div>
 
@@ -235,7 +210,7 @@ const Detail = () => {
               <div className="flex items-center gap-4 mb-4">
                 <div className="flex items-center gap-2">
                   <div className="flex text-amber-400">
-                    {[1, 2, 3, 4, 5].map((star) => (
+                    {[1, 2, 3, 4, 5]?.map((star) => (
                       <Star
                         key={star}
                         className={`w-5 h-5 ${
@@ -263,22 +238,26 @@ const Detail = () => {
                 Chọn Kích Cỡ
               </h3>
               <div className="flex gap-2 overflow-x-auto pb-2">
-                {product.sizes.map((size) => (
+                {sizes?.map((size) => (
                   <button
                     key={size.id}
-                    onClick={() => setSelectedSize(size.id)}
+                    onClick={() => {
+                      setSelectedSizeId(size.id);
+                    }}
                     className={`flex-shrink-0 px-4 py-3 rounded-xl border-2 transition-all duration-300 min-w-[100px] ${
-                      selectedSize === size.id
+                      selectedSizeId === size.id
                         ? "border-amber-500 bg-amber-50 text-amber-800"
                         : "border-gray-200 hover:border-amber-300 hover:bg-amber-50/50"
                     }`}
                   >
                     <div className="text-center">
                       <div className="font-semibold text-sm">{size.name}</div>
-                      <div className="text-xs text-gray-600">{size.volume}</div>
-                      {size.price > 0 && (
+                      <div className="text-xs text-gray-600">
+                        {size.value} ml
+                      </div>
+                      {size.extraPrice > 0 && (
                         <div className="text-xs font-medium text-amber-700">
-                          +{size.price.toLocaleString("vi-VN")}₫
+                          +{size.extraPrice.toLocaleString("vi-VN")}₫
                         </div>
                       )}
                     </div>
@@ -341,10 +320,17 @@ const Detail = () => {
 
               <button
                 onClick={handleAddToCart}
-                className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-3 shadow-lg"
+                disabled={addingToCart}
+                className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-3 shadow-lg disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
               >
-                <ShoppingCart className="w-5 h-5" />
-                Thêm Vào Giỏ Hàng
+                {addingToCart ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                ) : (
+                  <>
+                    <ShoppingCart className="w-5 h-5" />
+                    Thêm Vào Giỏ Hàng
+                  </>
+                )}
               </button>
             </div>
           </div>

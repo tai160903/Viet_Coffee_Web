@@ -1,26 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import {
-  Eye,
-  EyeOff,
-  Coffee,
-  Mail,
-  Lock,
-  ArrowRight,
-  Facebook,
-  Chrome,
-} from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff, Coffee, User, Lock, ArrowRight } from "lucide-react";
+import { useDispatch } from "react-redux";
+import { login } from "../redux/authSlice";
+import { toast, Toaster } from "sonner";
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    email: "",
+    username: "",
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -40,10 +36,10 @@ const Login = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.email) {
-      newErrors.email = "Vui lòng nhập email";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email không hợp lệ";
+    if (!formData.username) {
+      newErrors.username = "Vui lòng nhập tên đăng nhập";
+    } else if (formData.username.length < 3) {
+      newErrors.username = "Tên đăng nhập phải có ít nhất 3 ký tự";
     }
 
     if (!formData.password) {
@@ -58,24 +54,55 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      toast.error("Vui lòng kiểm tra thông tin đăng nhập");
+      return;
+    }
 
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      console.log("Login attempt:", formData);
-      setIsLoading(false);
-      // In real app, handle login success/error
-    }, 2000);
-  };
 
-  const handleSocialLogin = (provider) => {
-    console.log(`Login with ${provider}`);
-    // Handle social login
+    // Use Sonner's promise toast for handling async operations
+    toast.promise(
+      dispatch(
+        login({ username: formData.username, password: formData.password })
+      ),
+      {
+        loading: "Đang đăng nhập...",
+        success: (response) => {
+          if (response.meta.requestStatus === "fulfilled") {
+            setTimeout(() => navigate("/menu"), 500);
+            return "Đăng nhập thành công!";
+          } else {
+            throw new Error(response.payload || "Đăng nhập thất bại");
+          }
+        },
+        error: (err) => {
+          setErrors({ general: err.message });
+          return `${err.message}`;
+        },
+        finally: () => {
+          setIsLoading(false);
+        },
+      }
+    );
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-amber-50 flex items-center justify-center py-12 px-4">
+      {/* Sonner Toast Container */}
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          className: "rounded-lg shadow-md font-medium",
+          style: {
+            background: "white",
+            color: "#334155",
+            border: "1px solid #e2e8f0",
+          },
+          duration: 4000,
+        }}
+      />
+
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
@@ -104,32 +131,39 @@ const Login = () => {
         {/* Login Form */}
         <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
+            {/* General error message */}
+            {errors.general && (
+              <div className="p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm mb-4">
+                {errors.general}
+              </div>
+            )}
+
+            {/* Username Field */}
             <div>
               <label
-                htmlFor="email"
+                htmlFor="username"
                 className="block text-sm font-semibold text-gray-700 mb-2"
               >
-                Email
+                Tên đăng nhập
               </label>
               <div className="relative">
                 <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={formData.username}
                   onChange={handleInputChange}
                   className={`w-full px-4 py-4 pl-12 rounded-2xl border-2 transition-all duration-300 focus:outline-none ${
-                    errors.email
+                    errors.username
                       ? "border-red-300 focus:border-red-500 bg-red-50"
                       : "border-gray-200 focus:border-amber-500 focus:bg-amber-50/50"
                   }`}
-                  placeholder="Nhập địa chỉ email của bạn"
+                  placeholder="Nhập tên đăng nhập của bạn"
                 />
-                <Mail className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
+                <User className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
               </div>
-              {errors.email && (
-                <p className="mt-2 text-sm text-red-600">{errors.email}</p>
+              {errors.username && (
+                <p className="mt-2 text-sm text-red-600">{errors.username}</p>
               )}
             </div>
 
@@ -209,37 +243,6 @@ const Login = () => {
             </button>
           </form>
 
-          {/* Divider */}
-          <div className="my-8 flex items-center">
-            <div className="flex-1 border-t border-gray-200"></div>
-            <span className="px-4 text-sm text-gray-500 bg-white">
-              Hoặc đăng nhập với
-            </span>
-            <div className="flex-1 border-t border-gray-200"></div>
-          </div>
-
-          {/* Social Login */}
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              onClick={() => handleSocialLogin("google")}
-              className="flex items-center justify-center gap-3 px-4 py-3 border-2 border-gray-200 rounded-2xl hover:border-amber-300 hover:bg-amber-50 transition-all duration-300 group"
-            >
-              <Chrome className="w-5 h-5 text-gray-600 group-hover:text-amber-600" />
-              <span className="font-medium text-gray-700 group-hover:text-amber-700">
-                Google
-              </span>
-            </button>
-            <button
-              onClick={() => handleSocialLogin("facebook")}
-              className="flex items-center justify-center gap-3 px-4 py-3 border-2 border-gray-200 rounded-2xl hover:border-blue-300 hover:bg-blue-50 transition-all duration-300 group"
-            >
-              <Facebook className="w-5 h-5 text-gray-600 group-hover:text-blue-600" />
-              <span className="font-medium text-gray-700 group-hover:text-blue-700">
-                Facebook
-              </span>
-            </button>
-          </div>
-
           {/* Register Link */}
           <div className="mt-8 text-center">
             <p className="text-gray-600">
@@ -252,20 +255,6 @@ const Login = () => {
               </Link>
             </p>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-8 text-center text-sm text-gray-500">
-          <p>
-            Bằng cách đăng nhập, bạn đồng ý với{" "}
-            <Link to="/terms" className="text-amber-600 hover:text-amber-700">
-              Điều khoản sử dụng
-            </Link>{" "}
-            và{" "}
-            <Link to="/privacy" className="text-amber-600 hover:text-amber-700">
-              Chính sách bảo mật
-            </Link>
-          </p>
         </div>
       </div>
     </div>

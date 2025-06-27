@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { logout } from "../redux/authSlice";
 import {
   Menu,
   X,
@@ -17,7 +19,14 @@ import {
   UtensilsCrossed,
   Info,
   Mail,
+  Wallet,
+  LogOut,
+  Settings,
+  UserCircle,
+  Bell,
+  ChevronDown,
 } from "lucide-react";
+import cartService from "../services/cart.service";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,7 +34,38 @@ const Navbar = () => {
   const [cartCount, setCartCount] = useState(3); // Mock cart count
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const location = useLocation();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
+
+  const walletBalance = user?.wallet || 0;
+
+  const getUserDisplayName = () => {
+    if (user?.fullName) return user.fullName;
+    return "User";
+  };
+
+  // Get user initials for avatar
+  const getUserInitial = () => {
+    if (user?.fullName && user.fullName.length > 0) {
+      return user.fullName.charAt(0).toUpperCase();
+    }
+    if (user?.email && user.email.length > 0) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    return "U";
+  };
+
+  useEffect(() => {
+    const fetchCartCount = async () => {
+      const response = await cartService.getCart();
+      setCartCount(response?.data?.cartItems?.length || 0);
+    };
+    fetchCartCount();
+  }, []);
 
   // Handle scroll effect
   useEffect(() => {
@@ -33,8 +73,21 @@ const Navbar = () => {
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+
+    // Click outside to close user menu
+    const handleClickOutside = (event) => {
+      if (showUserMenu && !event.target.closest(".user-menu-container")) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showUserMenu]);
 
   // Navigation items
   const navItems = [
@@ -46,6 +99,21 @@ const Navbar = () => {
   ];
 
   const isActive = (path) => location.pathname === path;
+
+  // Format currency
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(amount);
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    dispatch(logout());
+    setShowUserMenu(false);
+    navigate("/");
+  };
 
   return (
     <>
@@ -151,13 +219,28 @@ const Navbar = () => {
                 )}
               </div>
 
-              {/* Favorites */}
-              <Link
-                to="/favorites"
-                className="p-3 text-gray-600 hover:text-red-500 hover:bg-red-50 rounded-full transition-all duration-300 relative"
-              >
-                <Heart className="w-5 h-5" />
-              </Link>
+              {/* Wallet - Only show if authenticated */}
+              {isAuthenticated && (
+                <div
+                  to="/wallet"
+                  className="hidden sm:flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-full transition-all duration-300 border border-gray-200 hover:border-green-200"
+                >
+                  <Wallet className="w-5 h-5" />
+                  <span className="text-sm font-medium">
+                    {formatCurrency(walletBalance)}
+                  </span>
+                </div>
+              )}
+
+              {/* Favorites - Only show if authenticated */}
+              {isAuthenticated && (
+                <Link
+                  to="/favorites"
+                  className="p-3 text-gray-600 hover:text-red-500 hover:bg-red-50 rounded-full transition-all duration-300 relative"
+                >
+                  <Heart className="w-5 h-5" />
+                </Link>
+              )}
 
               {/* Cart */}
               <Link
@@ -172,13 +255,99 @@ const Navbar = () => {
                 )}
               </Link>
 
-              {/* User Account */}
-              <Link
-                to="/account"
-                className="hidden sm:flex p-3 text-gray-600 hover:text-amber-700 hover:bg-amber-50 rounded-full transition-all duration-300"
-              >
-                <User className="w-5 h-5" />
-              </Link>
+              {/* User Account - Show different options based on auth status */}
+              {!isAuthenticated ? (
+                // Not logged in - show login/register buttons
+                <div className="hidden sm:flex gap-2">
+                  <Link
+                    to="/login"
+                    className="px-4 py-2 text-amber-700 hover:bg-amber-50 rounded-full transition-all duration-300 border border-amber-200 hover:border-amber-300"
+                  >
+                    Đăng Nhập
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-full hover:from-amber-700 hover:to-amber-800 transition-all duration-300"
+                  >
+                    Đăng Ký
+                  </Link>
+                </div>
+              ) : (
+                // Logged in - show user menu
+                <div className="relative user-menu-container">
+                  <button
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-amber-700 hover:bg-amber-50 rounded-full transition-all duration-300 border border-transparent hover:border-amber-200"
+                  >
+                    <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center text-amber-700 font-medium">
+                      {getUserInitial()}
+                    </div>
+                    <span className="hidden md:block font-medium">
+                      {getUserDisplayName()}
+                    </span>
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+
+                  {/* User dropdown menu */}
+                  {showUserMenu && (
+                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50">
+                      <div className="px-4 py-3 border-b border-gray-100">
+                        <p className="text-sm font-medium text-gray-900">
+                          {getUserDisplayName()}
+                        </p>
+                      </div>
+
+                      <div className="py-1">
+                        <Link
+                          to="/profile"
+                          onClick={() => setShowUserMenu(false)}
+                          className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-amber-50 hover:text-amber-700"
+                        >
+                          <UserCircle className="w-5 h-5" />
+                          <span>Tài Khoản Của Tôi</span>
+                        </Link>
+
+                        <Link
+                          to="/orders"
+                          onClick={() => setShowUserMenu(false)}
+                          className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-amber-50 hover:text-amber-700"
+                        >
+                          <ShoppingCart className="w-5 h-5" />
+                          <span>Đơn Hàng</span>
+                        </Link>
+
+                        <Link
+                          to="/notifications"
+                          onClick={() => setShowUserMenu(false)}
+                          className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-amber-50 hover:text-amber-700"
+                        >
+                          <Bell className="w-5 h-5" />
+                          <span>Thông Báo</span>
+                        </Link>
+
+                        <Link
+                          to="/settings"
+                          onClick={() => setShowUserMenu(false)}
+                          className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-amber-50 hover:text-amber-700"
+                        >
+                          <Settings className="w-5 h-5" />
+                          <span>Cài Đặt</span>
+                        </Link>
+                      </div>
+
+                      <div className="py-1 border-t border-gray-100">
+                        <button
+                          onClick={handleLogout}
+                          className="flex w-full items-center gap-3 px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600"
+                        >
+                          <LogOut className="w-5 h-5" />
+                          <span>Đăng Xuất</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Mobile Menu Button */}
               <button
@@ -246,24 +415,88 @@ const Navbar = () => {
 
               {/* Mobile Account Actions */}
               <div className="mt-6 pt-4 border-t border-gray-200">
-                <div className="grid grid-cols-2 gap-3">
-                  <Link
-                    to="/account"
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center justify-center gap-2 px-4 py-3 bg-amber-50 text-amber-700 rounded-2xl font-medium hover:bg-amber-100 transition-colors"
-                  >
-                    <User className="w-4 h-4" />
-                    Tài Khoản
-                  </Link>
-                  <Link
-                    to="/favorites"
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 rounded-2xl font-medium hover:bg-red-100 transition-colors"
-                  >
-                    <Heart className="w-4 h-4" />
-                    Yêu Thích
-                  </Link>
-                </div>
+                {isAuthenticated ? (
+                  // Logged in user options
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-2xl">
+                      <div className="w-12 h-12 bg-gradient-to-br from-amber-600 to-amber-700 rounded-full flex items-center justify-center text-white font-bold">
+                        {getUserInitial()}
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-800">
+                          {getUserDisplayName()}
+                        </div>
+                        <div className="text-sm text-gray-500 truncate">
+                          {user?.email || ""}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      {isAuthenticated && (
+                        <Link
+                          to="/wallet"
+                          onClick={() => setIsOpen(false)}
+                          className="flex flex-col items-center justify-center gap-1 px-3 py-3 bg-green-50 text-green-700 rounded-2xl font-medium hover:bg-green-100 transition-colors"
+                        >
+                          <Wallet className="w-4 h-4" />
+                          <span className="text-xs">Ví Tiền</span>
+                          <span className="text-xs font-bold">
+                            {formatCurrency(walletBalance)}
+                          </span>
+                        </Link>
+                      )}
+
+                      <Link
+                        to="/profile"
+                        onClick={() => setIsOpen(false)}
+                        className="flex flex-col items-center justify-center gap-1 px-3 py-3 bg-amber-50 text-amber-700 rounded-2xl font-medium hover:bg-amber-100 transition-colors"
+                      >
+                        <UserCircle className="w-4 h-4" />
+                        <span className="text-xs">Tài Khoản</span>
+                      </Link>
+
+                      {isAuthenticated && (
+                        <Link
+                          to="/favorites"
+                          onClick={() => setIsOpen(false)}
+                          className="flex flex-col items-center justify-center gap-1 px-3 py-3 bg-red-50 text-red-600 rounded-2xl font-medium hover:bg-red-100 transition-colors"
+                        >
+                          <Heart className="w-4 h-4" />
+                          <span className="text-xs">Yêu Thích</span>
+                        </Link>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-2xl font-medium transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Đăng Xuất
+                    </button>
+                  </div>
+                ) : (
+                  // Not logged in options
+                  <div className="grid grid-cols-2 gap-3">
+                    <Link
+                      to="/login"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center justify-center gap-2 px-4 py-3 bg-amber-50 text-amber-700 border border-amber-200 rounded-2xl font-medium hover:bg-amber-100 transition-colors"
+                    >
+                      <User className="w-4 h-4" />
+                      Đăng Nhập
+                    </Link>
+                    <Link
+                      to="/register"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-2xl font-medium hover:from-amber-700 hover:to-amber-800 transition-colors"
+                    >
+                      <UserCircle className="w-4 h-4" />
+                      Đăng Ký
+                    </Link>
+                  </div>
+                )}
               </div>
 
               {/* Contact Info */}

@@ -1,6 +1,4 @@
-"use client";
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ShoppingCart,
@@ -8,7 +6,6 @@ import {
   Minus,
   Trash2,
   Clock,
-  MapPin,
   ArrowRight,
   Coffee,
   Tag,
@@ -16,6 +13,8 @@ import {
   AlertCircle,
   ChevronRight,
 } from "lucide-react";
+import cartService from "../services/cart.service";
+import formatCurrency from "../utils/formatCurrency";
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState([
@@ -59,6 +58,20 @@ const Cart = () => {
   const [promoCode, setPromoCode] = useState("");
   const [promoApplied, setPromoApplied] = useState(false);
   const [orderNotes, setOrderNotes] = useState("");
+
+  useEffect(() => {
+    fetchCart();
+  }, []);
+
+  const fetchCart = async () => {
+    try {
+      const response = await cartService.getCart();
+      console.log("Fetched cart items:", response.data.cartItems);
+      setCartItems(response.data.cartItems || []);
+    } catch (error) {
+      console.error("Error fetching cart:", error);
+    }
+  };
 
   // Generate next 7 days
   const generatePickupDates = () => {
@@ -165,12 +178,11 @@ const Cart = () => {
 
   // Calculate totals
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum, item) => sum + item?.customize?.price * item.quantity,
     0
   );
   const discount = promoApplied ? subtotal * 0.1 : 0;
-  const deliveryFee = 0; // Free pickup
-  const total = subtotal - discount + deliveryFee;
+  const total = subtotal - discount;
 
   if (cartItems.length === 0) {
     return (
@@ -235,7 +247,7 @@ const Cart = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-6">
-            {cartItems.map((item) => (
+            {cartItems?.map((item) => (
               <div
                 key={item.id}
                 className="bg-white rounded-3xl shadow-lg p-6 border border-gray-100"
@@ -244,8 +256,8 @@ const Cart = () => {
                   {/* Item Image */}
                   <div className="w-20 h-20 bg-gradient-to-br from-amber-100 to-amber-200 rounded-2xl overflow-hidden flex-shrink-0">
                     <img
-                      src={item.image || "/placeholder.svg"}
-                      alt={item.name}
+                      src={item.imageProduct || "/placeholder.svg"}
+                      alt={item?.customize?.product}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -255,9 +267,8 @@ const Cart = () => {
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <h3 className="text-lg font-bold text-gray-800">
-                          {item.name}
+                          {item?.customize?.product}
                         </h3>
-                        <p className="text-sm text-gray-500">{item.nameEn}</p>
                       </div>
                       <button
                         onClick={() => removeItem(item.id)}
@@ -270,7 +281,7 @@ const Cart = () => {
                     {/* Item Options */}
                     <div className="flex flex-wrap gap-2 mb-3">
                       <span className="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">
-                        {item.size}
+                        {item?.customize?.size}
                       </span>
                       {item.temperature && (
                         <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
@@ -282,7 +293,7 @@ const Cart = () => {
                     {/* Notes */}
                     {item.notes && (
                       <p className="text-sm text-gray-600 mb-3 italic">
-                        Ghi chú: {item.notes}
+                        Ghi chú: {item?.customize?.note}
                       </p>
                     )}
 
@@ -311,12 +322,13 @@ const Cart = () => {
                       </div>
                       <div className="text-right">
                         <div className="text-xl font-bold text-amber-700">
-                          {(item.price * item.quantity).toLocaleString("vi-VN")}
-                          ₫
+                          {formatCurrency(
+                            item?.customize?.price * item?.quantity
+                          )}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {item.price.toLocaleString("vi-VN")}₫ x{" "}
-                          {item.quantity}
+                          {formatCurrency(item?.customize?.price)} x{" "}
+                          {item?.quantity}
                         </div>
                       </div>
                     </div>
@@ -449,20 +461,6 @@ const Cart = () => {
                 Tóm Tắt Đơn Hàng
               </h3>
 
-              {/* Pickup Location */}
-              <div className="flex items-start gap-3 mb-6 p-4 bg-amber-50 rounded-2xl border border-amber-100">
-                <MapPin className="w-5 h-5 text-amber-700 mt-0.5" />
-                <div>
-                  <div className="font-semibold text-amber-800">
-                    Lấy Hàng Tại Quán
-                  </div>
-                  <div className="text-sm text-amber-700">
-                    123 Nguyễn Huệ, Quận 1, TP.HCM
-                  </div>
-                  <div className="text-sm text-amber-600">Miễn phí</div>
-                </div>
-              </div>
-
               {/* In the order summary section, update the pickup time display */}
               {selectedPickupDate && selectedPickupTime && (
                 <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-2xl border border-blue-100 mb-6">
@@ -536,10 +534,6 @@ const Cart = () => {
                     <span>-{discount.toLocaleString("vi-VN")}₫</span>
                   </div>
                 )}
-                <div className="flex justify-between text-gray-600">
-                  <span>Phí lấy hàng</span>
-                  <span className="text-green-600 font-medium">Miễn phí</span>
-                </div>
                 <div className="border-t border-gray-200 pt-3">
                   <div className="flex justify-between text-xl font-bold text-gray-800">
                     <span>Tổng cộng</span>

@@ -7,12 +7,10 @@ import {
   Leaf,
   UtensilsCrossed,
   Cookie,
-  Star,
-  Clock,
-  Heart,
   ArrowRight,
 } from "lucide-react";
 import ProductService from "../services/product.service";
+import formatCurrency from "../utils/formatCurrency";
 
 function Menu() {
   const [activeCategory, setActiveCategory] = useState("coffee");
@@ -25,7 +23,7 @@ function Menu() {
   const fetchProducts = async () => {
     try {
       const response = await ProductService.getProducts();
-      setProducts(response);
+      setProducts(response.data);
     } catch (error) {
       console.error("Error fetching products:", error.message);
       setProducts([]);
@@ -332,7 +330,7 @@ function Menu() {
 
         {/* Items Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredItems.map((item) => (
+          {products.map((item) => (
             <Link
               to={`/details/${item.id}`}
               key={item.id}
@@ -346,21 +344,6 @@ function Menu() {
                     alt={item.name}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-
-                  {/* Popular Badge */}
-                  {item.popular && (
-                    <div className="absolute top-4 left-4 flex items-center gap-1 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                      <Star className="w-3 h-3 fill-current" />
-                      Phổ Biến
-                    </div>
-                  )}
-
-                  {/* Time Badge */}
-                  <div className="absolute top-4 right-4 flex items-center gap-1 bg-white/90 backdrop-blur-sm text-gray-700 text-xs font-medium px-3 py-1 rounded-full">
-                    <Clock className="w-3 h-3" />
-                    {item.time}
-                  </div>
                 </div>
 
                 {/* Content */}
@@ -370,13 +353,10 @@ function Menu() {
                       <h3 className="text-lg font-bold text-gray-800 mb-1 group-hover:text-amber-700 transition-colors">
                         {item.name}
                       </h3>
-                      <p className="text-sm text-gray-500 font-medium">
-                        {item.nameEn}
-                      </p>
                     </div>
                     <div className="text-right">
                       <span className="text-2xl font-bold text-amber-700">
-                        {item.price.toLocaleString("vi-VN")}₫
+                        {formatCurrency(item.price)}
                       </span>
                     </div>
                   </div>
@@ -387,7 +367,6 @@ function Menu() {
 
                   {/* Action Button */}
                   <button className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-bold py-3 px-6 rounded-2xl transition-all duration-300 transform group-hover:scale-105 flex items-center justify-center gap-2">
-                    <Heart className="w-4 h-4" />
                     Đặt Món
                   </button>
                 </div>

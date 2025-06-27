@@ -43,7 +43,7 @@ const router = createBrowserRouter([
         element: <Cart />,
       },
       {
-        path: "payments",
+        path: "payment",
         element: <Payment />,
       },
       {
