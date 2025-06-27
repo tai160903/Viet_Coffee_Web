@@ -184,6 +184,23 @@ const Cart = () => {
   const discount = promoApplied ? subtotal * 0.1 : 0;
   const total = subtotal - discount;
 
+  const handleCheckout = () => {
+    // Prepare order data for payment page
+    const orderData = {
+      items: cartItems,
+      subtotal,
+      discount,
+      total,
+      pickupTime:
+        selectedPickupDate && selectedPickupTime
+          ? `${selectedPickupDate}T${selectedPickupTime}`
+          : "",
+      orderNotes,
+      promoCode: promoApplied ? "WELCOME10" : null,
+    };
+    localStorage.setItem("orderData", JSON.stringify(orderData));
+  };
+
   if (cartItems.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-amber-50 py-12">
@@ -555,6 +572,8 @@ const Cart = () => {
                 onClick={(e) => {
                   if (!selectedPickupDate || !selectedPickupTime) {
                     e.preventDefault();
+                  } else {
+                    handleCheckout();
                   }
                 }}
               >

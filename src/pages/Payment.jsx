@@ -1,107 +1,89 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   CreditCard,
   Smartphone,
-  Banknote,
-  MapPin,
+  Wallet,
   Clock,
   User,
-  Mail,
   Phone,
   CheckCircle,
   ArrowLeft,
-  Shield,
   ChevronRight,
 } from "lucide-react";
+import paymentService from "../services/payment.service"; // Change from orderService to paymentService
+import formatCurrency from "../utils/formatCurrency";
+import { toast } from "sonner";
 
 const Payment = () => {
-  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [paymentMethod, setPaymentMethod] = useState("wallet");
   const [customerInfo, setCustomerInfo] = useState({
     fullName: "",
-    email: "",
     phone: "",
-  });
-  const [cardInfo, setCardInfo] = useState({
-    cardNumber: "",
-    expiryDate: "",
-    cvv: "",
-    cardName: "",
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState({});
+  const [orderData, setOrderData] = useState({
+    items: [],
+    subtotal: 0,
+    discount: 0,
+    total: 0,
+    pickupTime: "",
+    orderNotes: "",
+  });
 
-  // Mock order data (would come from cart/context in real app)
-  const orderData = {
-    items: [
-      {
-        id: 1,
-        name: "Cà Phê Phin Truyền Thống",
-        size: "Vừa (200ml)",
-        temperature: "Nóng",
-        quantity: 2,
-        price: 30000,
-        notes: "Ít đường, nhiều sữa",
-      },
-      {
-        id: 2,
-        name: "Cà Phê Trứng",
-        size: "Lớn (250ml)",
-        temperature: "Nóng",
-        quantity: 1,
-        price: 35000,
-        notes: "",
-      },
-      {
-        id: 3,
-        name: "Bánh Mì Thịt Nướng",
-        size: "Tiêu chuẩn",
-        quantity: 1,
-        price: 45000,
-        notes: "Không rau mùi",
-      },
-    ],
-    subtotal: 140000,
-    discount: 14000,
-    total: 126000,
-    pickupTime: "14:30",
-    orderNotes: "Gọi điện khi đến quán",
-  };
+  // Lấy dữ liệu order từ localStorage khi mount
+  useEffect(() => {
+    const localOrder = localStorage.getItem("orderData");
+    if (localOrder) {
+      try {
+        const parsed = JSON.parse(localOrder);
+        setOrderData({
+          items: parsed.items || [],
+          subtotal: parsed.subtotal || 0,
+          discount: parsed.discount || 0,
+          total: parsed.total || 0,
+          pickupTime: parsed.pickupTime || "",
+          orderNotes: parsed.orderNotes || "",
+        });
+      } catch {
+        // fallback nếu lỗi parse
+        setOrderData({
+          items: [],
+          subtotal: 0,
+          discount: 0,
+          total: 0,
+          pickupTime: "",
+          orderNotes: "",
+        });
+      }
+    }
+  }, []);
 
+  console.log("Order Data:", orderData);
   const paymentMethods = [
     {
-      id: "cash",
-      name: "Tiền Mặt",
-      description: "Thanh toán khi lấy hàng",
-      icon: Banknote,
+      id: "wallet",
+      name: "Ví Của Tôi",
+      description: "Thanh toán bằng số dư ví tài khoản",
+      icon: Wallet,
       color: "from-green-500 to-green-600",
     },
     {
-      id: "card",
-      name: "Thẻ Tín Dụng",
-      description: "Visa, Mastercard, JCB",
-      icon: CreditCard,
+      id: "payos",
+      name: "PayOS",
+      description: "Thanh toán qua PayOS",
+      icon: CreditCard, // You can replace with PayOS SVG/icon if available
       color: "from-blue-500 to-blue-600",
-    },
-    {
-      id: "ewallet",
-      name: "Ví Điện Tử",
-      description: "MoMo, ZaloPay, VNPay",
-      icon: Smartphone,
-      color: "from-purple-500 to-purple-600",
     },
   ];
 
   const handleInputChange = (section, field, value) => {
     if (section === "customer") {
       setCustomerInfo((prev) => ({ ...prev, [field]: value }));
-    } else if (section === "card") {
-      setCardInfo((prev) => ({ ...prev, [field]: value }));
     }
-
-    // Clear errors
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
     }
@@ -109,40 +91,14 @@ const Payment = () => {
 
   const validateForm = () => {
     const newErrors = {};
-
-    // Customer info validation
     if (!customerInfo.fullName.trim()) {
       newErrors.fullName = "Vui lòng nhập họ tên";
-    }
-    if (!customerInfo.email) {
-      newErrors.email = "Vui lòng nhập email";
-    } else if (!/\S+@\S+\.\S+/.test(customerInfo.email)) {
-      newErrors.email = "Email không hợp lệ";
     }
     if (!customerInfo.phone) {
       newErrors.phone = "Vui lòng nhập số điện thoại";
     } else if (!/^[0-9]{10,11}$/.test(customerInfo.phone.replace(/\s/g, ""))) {
       newErrors.phone = "Số điện thoại không hợp lệ";
     }
-
-    // Card validation if card payment selected
-    if (paymentMethod === "card") {
-      if (!cardInfo.cardNumber) {
-        newErrors.cardNumber = "Vui lòng nhập số thẻ";
-      } else if (cardInfo.cardNumber.replace(/\s/g, "").length < 16) {
-        newErrors.cardNumber = "Số thẻ không hợp lệ";
-      }
-      if (!cardInfo.expiryDate) {
-        newErrors.expiryDate = "Vui lòng nhập ngày hết hạn";
-      }
-      if (!cardInfo.cvv) {
-        newErrors.cvv = "Vui lòng nhập CVV";
-      }
-      if (!cardInfo.cardName) {
-        newErrors.cardName = "Vui lòng nhập tên trên thẻ";
-      }
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -153,32 +109,39 @@ const Payment = () => {
 
     setIsProcessing(true);
 
-    // Simulate payment processing
-    setTimeout(() => {
-      console.log("Order submitted:", {
-        customerInfo,
-        paymentMethod,
-        cardInfo: paymentMethod === "card" ? cardInfo : null,
-        orderData,
-      });
-      setIsProcessing(false);
-      // In real app, redirect to success page
-      alert("Đặt hàng thành công! Mã đơn hàng: #VN2024001");
-    }, 3000);
-  };
+    try {
+      // Prepare order payload
+      const payload = {
+        pickupTime: orderData.pickupTime,
+        fullName: customerInfo.fullName,
+        phoneNumber: customerInfo.phone,
+      };
 
-  const formatCardNumber = (value) => {
-    const v = value.replace(/\s+/g, "").replace(/[^0-9]/gi, "");
-    const matches = v.match(/\d{4,16}/g);
-    const match = (matches && matches[0]) || "";
-    const parts = [];
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4));
-    }
-    if (parts.length) {
-      return parts.join(" ");
-    } else {
-      return v;
+      let response;
+      if (paymentMethod === "wallet") {
+        response = await paymentService.payWithWallet(payload);
+      } else if (paymentMethod === "payos") {
+        response = await paymentService.payWithPayOS(payload);
+      }
+
+      setIsProcessing(false);
+
+      if (response && response.success) {
+        toast.success("Thanh toán thành công. Cảm ơn bạn đã mua hàng!", {
+          duration: 5000,
+        });
+      } else {
+        toast.error(
+          response?.detail || "Đặt hàng thất bại. Vui lòng thử lại sau.",
+          { duration: 5000 }
+        );
+      }
+    } catch (error) {
+      setIsProcessing(false);
+      toast.error(
+        "Đặt hàng thất bại. Vui lòng kiểm tra lại thông tin và thử lại.",
+        { duration: 5000 }
+      );
     }
   };
 
@@ -278,31 +241,6 @@ const Payment = () => {
                     <p className="mt-2 text-sm text-red-600">{errors.phone}</p>
                   )}
                 </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Email *
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="email"
-                      value={customerInfo.email}
-                      onChange={(e) =>
-                        handleInputChange("customer", "email", e.target.value)
-                      }
-                      className={`w-full px-4 py-4 pl-12 rounded-2xl border-2 transition-all duration-300 focus:outline-none ${
-                        errors.email
-                          ? "border-red-300 focus:border-red-500 bg-red-50"
-                          : "border-gray-200 focus:border-amber-500 focus:bg-amber-50/50"
-                      }`}
-                      placeholder="Nhập địa chỉ email"
-                    />
-                    <Mail className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
-                  </div>
-                  {errors.email && (
-                    <p className="mt-2 text-sm text-red-600">{errors.email}</p>
-                  )}
-                </div>
               </div>
             </div>
 
@@ -346,127 +284,6 @@ const Payment = () => {
                 })}
               </div>
 
-              {/* Card Details */}
-              {paymentMethod === "card" && (
-                <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-lg font-bold text-gray-800 mb-4">
-                    Thông Tin Thẻ
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Số Thẻ *
-                      </label>
-                      <input
-                        type="text"
-                        value={cardInfo.cardNumber}
-                        onChange={(e) =>
-                          handleInputChange(
-                            "card",
-                            "cardNumber",
-                            formatCardNumber(e.target.value)
-                          )
-                        }
-                        className={`w-full px-4 py-4 rounded-2xl border-2 transition-all duration-300 focus:outline-none ${
-                          errors.cardNumber
-                            ? "border-red-300 focus:border-red-500 bg-red-50"
-                            : "border-gray-200 focus:border-amber-500 focus:bg-amber-50/50"
-                        }`}
-                        placeholder="1234 5678 9012 3456"
-                        maxLength={19}
-                      />
-                      {errors.cardNumber && (
-                        <p className="mt-2 text-sm text-red-600">
-                          {errors.cardNumber}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Ngày Hết Hạn *
-                      </label>
-                      <input
-                        type="text"
-                        value={cardInfo.expiryDate}
-                        onChange={(e) =>
-                          handleInputChange(
-                            "card",
-                            "expiryDate",
-                            e.target.value
-                          )
-                        }
-                        className={`w-full px-4 py-4 rounded-2xl border-2 transition-all duration-300 focus:outline-none ${
-                          errors.expiryDate
-                            ? "border-red-300 focus:border-red-500 bg-red-50"
-                            : "border-gray-200 focus:border-amber-500 focus:bg-amber-50/50"
-                        }`}
-                        placeholder="MM/YY"
-                        maxLength={5}
-                      />
-                      {errors.expiryDate && (
-                        <p className="mt-2 text-sm text-red-600">
-                          {errors.expiryDate}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        CVV *
-                      </label>
-                      <input
-                        type="text"
-                        value={cardInfo.cvv}
-                        onChange={(e) =>
-                          handleInputChange("card", "cvv", e.target.value)
-                        }
-                        className={`w-full px-4 py-4 rounded-2xl border-2 transition-all duration-300 focus:outline-none ${
-                          errors.cvv
-                            ? "border-red-300 focus:border-red-500 bg-red-50"
-                            : "border-gray-200 focus:border-amber-500 focus:bg-amber-50/50"
-                        }`}
-                        placeholder="123"
-                        maxLength={4}
-                      />
-                      {errors.cvv && (
-                        <p className="mt-2 text-sm text-red-600">
-                          {errors.cvv}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Tên Trên Thẻ *
-                      </label>
-                      <input
-                        type="text"
-                        value={cardInfo.cardName}
-                        onChange={(e) =>
-                          handleInputChange(
-                            "card",
-                            "cardName",
-                            e.target.value.toUpperCase()
-                          )
-                        }
-                        className={`w-full px-4 py-4 rounded-2xl border-2 transition-all duration-300 focus:outline-none ${
-                          errors.cardName
-                            ? "border-red-300 focus:border-red-500 bg-red-50"
-                            : "border-gray-200 focus:border-amber-500 focus:bg-amber-50/50"
-                        }`}
-                        placeholder="NGUYEN VAN A"
-                      />
-                      {errors.cardName && (
-                        <p className="mt-2 text-sm text-red-600">
-                          {errors.cardName}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* E-wallet Options */}
               {paymentMethod === "ewallet" && (
                 <div className="border-t border-gray-200 pt-6">
@@ -502,18 +319,6 @@ const Payment = () => {
 
               {/* Pickup Info */}
               <div className="space-y-4 mb-6">
-                <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-100">
-                  <MapPin className="w-5 h-5 text-amber-700 mt-0.5" />
-                  <div>
-                    <div className="font-semibold text-amber-800">
-                      Lấy Hàng Tại Quán
-                    </div>
-                    <div className="text-sm text-amber-700">
-                      123 Nguyễn Huệ, Quận 1, TP.HCM
-                    </div>
-                  </div>
-                </div>
-
                 <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-2xl border border-blue-100">
                   <Clock className="w-5 h-5 text-blue-700 mt-0.5" />
                   <div>
@@ -521,7 +326,12 @@ const Payment = () => {
                       Thời Gian Lấy Hàng
                     </div>
                     <div className="text-sm text-blue-700">
-                      Hôm nay {orderData.pickupTime}
+                      {orderData.pickupTime
+                        ? new Date(orderData.pickupTime).toLocaleString(
+                            "vi-VN",
+                            { dateStyle: "full", timeStyle: "short" }
+                          )
+                        : "Chưa chọn thời gian"}
                     </div>
                   </div>
                 </div>
@@ -537,16 +347,14 @@ const Payment = () => {
                   >
                     <div className="flex-1">
                       <div className="font-medium text-gray-800">
-                        {item.name}
+                        {item.customize.product}
                       </div>
                       <div className="text-gray-600">
-                        {item.size}{" "}
-                        {item.temperature && `• ${item.temperature}`} • SL:{" "}
-                        {item.quantity}
+                        {item.customize.size} • SL: {item.quantity}
                       </div>
-                      {item.notes && (
+                      {item.customize.note && (
                         <div className="text-gray-500 italic">
-                          Ghi chú: {item.notes}
+                          Ghi chú: {item.customize.note}
                         </div>
                       )}
                     </div>
@@ -557,32 +365,19 @@ const Payment = () => {
                 ))}
               </div>
 
-              {/* Order Notes */}
-              {orderData.orderNotes && (
-                <div className="mb-6 p-3 bg-gray-50 rounded-2xl">
-                  <div className="text-sm font-medium text-gray-800 mb-1">
-                    Ghi chú đơn hàng:
-                  </div>
-                  <div className="text-sm text-gray-600">
-                    {orderData.orderNotes}
-                  </div>
-                </div>
-              )}
-
               {/* Price Summary */}
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-gray-600">
                   <span>Tạm tính</span>
-                  <span>{orderData.subtotal.toLocaleString("vi-VN")}₫</span>
+                  <span>{formatCurrency(orderData.subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-green-600">
-                  <span>Giảm giá</span>
-                  <span>-{orderData.discount.toLocaleString("vi-VN")}₫</span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Phí lấy hàng</span>
-                  <span className="text-green-600 font-medium">Miễn phí</span>
-                </div>
+                {orderData.discount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Giảm giá</span>
+                    <span>-{orderData.discount.toLocaleString("vi-VN")}₫</span>
+                  </div>
+                )}
+
                 <div className="border-t border-gray-200 pt-3">
                   <div className="flex justify-between text-xl font-bold text-gray-800">
                     <span>Tổng cộng</span>
@@ -590,14 +385,6 @@ const Payment = () => {
                       {orderData.total.toLocaleString("vi-VN")}₫
                     </span>
                   </div>
-                </div>
-              </div>
-
-              {/* Security Notice */}
-              <div className="flex items-start gap-2 p-3 bg-green-50 rounded-2xl border border-green-100 mb-6">
-                <Shield className="w-4 h-4 text-green-600 mt-0.5" />
-                <div className="text-sm text-green-800">
-                  Thông tin của bạn được bảo mật và mã hóa an toàn
                 </div>
               </div>
 

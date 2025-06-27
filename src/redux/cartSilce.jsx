@@ -1,19 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-// Helper function to load cart from localStorage
-const loadCartFromStorage = () => {
-  if (typeof window !== "undefined") {
-    try {
-      const storedCart = localStorage.getItem("cart");
-      return storedCart ? JSON.parse(storedCart) : [];
-    } catch (error) {
-      console.error("Error loading cart from localStorage:", error);
-      return [];
-    }
-  }
-  return [];
-};
-
 // Helper function to save cart to localStorage
 const saveCartToStorage = (cartItems) => {
   if (typeof window !== "undefined") {
@@ -31,7 +17,7 @@ const initialState = {
   customerId: null,
   totalAmount: 0,
   totalQuantity: 0,
-  cartItems: loadCartFromStorage(),
+  cartItems: [],
   discount: null,
   finalTotal: 0,
 };

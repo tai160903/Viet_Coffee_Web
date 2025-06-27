@@ -26,12 +26,10 @@ import {
   Bell,
   ChevronDown,
 } from "lucide-react";
-import cartService from "../services/cart.service";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [cartCount, setCartCount] = useState(3); // Mock cart count
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -40,6 +38,10 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   const { user, isAuthenticated } = useSelector((state) => state.auth);
+
+  // Get cart items from Redux
+  const cartItems = useSelector((state) => state.cart.cartItems);
+  const cartCount = cartItems?.length || 0;
 
   const walletBalance = user?.wallet || 0;
 
@@ -58,14 +60,6 @@ const Navbar = () => {
     }
     return "U";
   };
-
-  useEffect(() => {
-    const fetchCartCount = async () => {
-      const response = await cartService.getCart();
-      setCartCount(response?.data?.cartItems?.length || 0);
-    };
-    fetchCartCount();
-  }, []);
 
   // Handle scroll effect
   useEffect(() => {

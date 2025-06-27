@@ -10,7 +10,7 @@ import Payment from "../pages/Payment";
 import Contact from "../pages/Contact";
 import Profile from "../pages/Profile";
 import About from "../pages/About";
-import ManagerLayout from "../components/ManagerLayout";
+import ManagerLayout from "../components/managerLayout";
 import Dashboard from "../pages/manager/Dashboard";
 import Product from "../pages/manager/Product";
 import Staff from "../pages/manager/Staff";

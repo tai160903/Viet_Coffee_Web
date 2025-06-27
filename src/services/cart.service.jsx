@@ -16,6 +16,7 @@ const cartService = {
   getCart: async () => {
     try {
       const response = await instance.get("/Cart/get-cart-by-customer");
+
       return response.data;
     } catch (error) {
       console.error("Error retrieving cart:", error.message);
