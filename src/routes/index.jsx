@@ -8,24 +8,29 @@ import Detail from "../pages/Detail";
 import Cart from "../pages/Cart";
 import Payment from "../pages/Payment";
 import Contact from "../pages/Contact";
-import Profile from "../pages/profile";
+import Profile from "../pages/profile/index";
 import About from "../pages/About";
-// import ManagerLayout from "../components/managerLayout";
-// import Dashboard from "../pages/manager/Dashboard";
-// import Product from "../pages/manager/Product";
-// import Staff from "../pages/manager/Staff";
-// import Inventory from "../pages/manager/Inventory";
-// import MenuManagement from "../pages/manager/MenuManager";
-import DashboardPOS from "../pages/pos/DashboardPOS";
+import ManagerLayout from "../components/managerLayout";
+import Dashboard from "../pages/manager/Dashboard";
+import Product from "../pages/manager/Product";
+import Staff from "../pages/manager/Staff";
+import Inventory from "../pages/manager/Inventory";
+import MenuManagement from "../pages/manager/MenuManager";
 import Orders from "../pages/pos/Orders";
-import Reports from "../pages/pos/Reports";
 import Sales from "../pages/pos/Sales";
 import POSLayout from "../components/posLayout";
 import SuccessPage from "../pages/Success";
 import FailedPage from "../pages/Failed";
-import OrderHistory from "../pages/OrdersHistory";
+import OrderHistory from "../pages/profile/OrdersHistory";
 import NotFound from "../pages/NotFound";
 import ProfileLayout from "../components/profileLayout";
+import ProtectedRoute from "../utils/protectedRoute";
+import Location from "../pages/Location";
+import Category from "../pages/manager/Category";
+import Order from "../pages/manager/Order";
+import Customers from "../pages/manager/Customer";
+import PromotionManagement from "../pages/manager/Promotion";
+// import Wallet from "../pages/Wallet";
 
 const router = createBrowserRouter([
   {
@@ -44,13 +49,25 @@ const router = createBrowserRouter([
         path: "menu",
         element: <Menu />,
       },
+      // {
+      //   path: "wallet",
+      //   element: <Wallet />,
+      // },
       {
         path: "cart",
-        element: <Cart />,
+        element: (
+          <ProtectedRoute>
+            <Cart />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "payment",
-        element: <Payment />,
+        element: (
+          <ProtectedRoute>
+            <Payment />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "about",
@@ -61,16 +78,24 @@ const router = createBrowserRouter([
         element: <Contact />,
       },
       {
-        path: "orders-history",
-        element: <OrderHistory />,
+        path: "location",
+        element: <Location />,
       },
       {
         path: "profile",
-        element: <ProfileLayout />,
+        element: (
+          <ProtectedRoute>
+            <ProfileLayout />
+          </ProtectedRoute>
+        ),
         children: [
           {
             path: "",
             element: <Profile />,
+          },
+          {
+            path: "orders-history",
+            element: <OrderHistory />,
           },
         ],
       },
@@ -84,61 +109,86 @@ const router = createBrowserRouter([
     path: "/register",
     element: <Register />,
   },
-
   {
     path: "/payment-success",
-    element: <SuccessPage />,
+    element: (
+      <ProtectedRoute>
+        <SuccessPage />
+      </ProtectedRoute>
+    ),
   },
   {
-    path: "/payment-failed",
-    element: <FailedPage />,
+    path: "/payment-cancel",
+    element: (
+      <ProtectedRoute>
+        <FailedPage />
+      </ProtectedRoute>
+    ),
   },
-  // {
-  //   path: "/manager",
-  //   element: <ManagerLayout />,
-  //   children: [
-  //     {
-  //       path: "",
-  //       element: <Dashboard />,
-  //     },
-  //     {
-  //       path: "products",
-  //       element: <Product />,
-  //     },
-  //     {
-  //       path: "inventory",
-  //       element: <Inventory />,
-  //     },
-  //     {
-  //       path: "menu-management",
-  //       element: <MenuManagement />,
-  //     },
-  //     {
-  //       path: "staffs",
-  //       element: <Staff />,
-  //     },
-  //   ],
-  // },
   {
-    path: "/pos",
-    element: <POSLayout />,
+    path: "/manager",
+    element: (
+      <ProtectedRoute requiredRole="ADMIN">
+        <ManagerLayout />
+      </ProtectedRoute>
+    ),
     children: [
       {
         path: "",
-        element: <DashboardPOS />,
+        element: <Dashboard />,
+      },
+      {
+        path: "products",
+        element: <Product />,
+      },
+      {
+        path: "categories",
+        element: <Category />,
+      },
+      {
+        path: "orders",
+        element: <Order />,
+      },
+      {
+        path: "inventory",
+        element: <Inventory />,
+      },
+      {
+        path: "customers",
+        element: <Customers />,
+      },
+      {
+        path: "promotions",
+        element: <PromotionManagement />,
+      },
+      {
+        path: "menu-management",
+        element: <MenuManagement />,
+      },
+      {
+        path: "staffs",
+        element: <Staff />,
+      },
+    ],
+  },
+  {
+    path: "/pos",
+    element: (
+      <ProtectedRoute requiredRole={["STAFF", "ADMIN"]}>
+        <POSLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        path: "",
+        element: <Sales />,
       },
       {
         path: "orders",
         element: <Orders />,
       },
-      {
-        path: "reports",
-        element: <Reports />,
-      },
-      { path: "sales", element: <Sales /> },
     ],
   },
-
   {
     path: "*",
     element: <NotFound />,

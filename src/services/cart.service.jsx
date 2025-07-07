@@ -1,12 +1,12 @@
 import instance from "../utils/instance";
-import store from "../redux/store";
-import { clearCart } from "../redux/cartSilce";
+import { store } from "../redux/store/store";
+import { clearCart } from "../redux/slices/cartSlice";
 
 const cartService = {
   addToCart: async (data) => {
     try {
       const response = await instance.post("/Cart/add-customize-to-cart", data);
-      return response.data;
+      return response;
     } catch (error) {
       console.error("Error adding item to cart:", error.message);
       return null;
@@ -26,10 +26,7 @@ const cartService = {
   clearCart: async () => {
     try {
       const response = await instance.delete("/Cart/clear-cart");
-
-      // Clear Redux cart as well
       store.dispatch(clearCart());
-
       return response.data;
     } catch (error) {
       console.error("Error clearing cart:", error.message);

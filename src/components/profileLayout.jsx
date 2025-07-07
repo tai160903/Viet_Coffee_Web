@@ -5,8 +5,8 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import {
   User,
   ShoppingBag,
-  Settings,
-  Gift,
+  // Settings,
+  // Gift,
   ChevronRight,
   Menu,
   X,
@@ -23,15 +23,15 @@ export default function ProfileLayout() {
       id: "orders",
       name: "Đơn Hàng",
       icon: ShoppingBag,
-      path: "/profile/orders",
+      path: "/profile/orders-history",
     },
-    { id: "rewards", name: "Tích Điểm", icon: Gift, path: "/profile/rewards" },
-    {
-      id: "settings",
-      name: "Cài Đặt",
-      icon: Settings,
-      path: "/profile/settings",
-    },
+    // { id: "rewards", name: "Tích Điểm", icon: Gift, path: "/profile/rewards" },
+    // {
+    //   id: "settings",
+    //   name: "Cài Đặt",
+    //   icon: Settings,
+    //   path: "/profile/settings",
+    // },
   ];
 
   const isActive = (path) => location.pathname === path;

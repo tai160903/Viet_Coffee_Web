@@ -17,8 +17,9 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useDispatch } from "react-redux";
 import cartService from "../services/cart.service";
-import { removeFromCart, setCartInfo } from "../redux/cartSilce";
+import { removeFromCart, setCartInfo } from "../redux/slices/cartSlice";
 import formatCurrency from "../utils/formatCurrency";
+import { setCheckoutData } from "../redux/slices/orderSlice";
 const Cart = () => {
   const dispatch = useDispatch();
   const [cartItems, setCartItems] = useState([]);
@@ -194,11 +195,9 @@ const Cart = () => {
       await cartService.deleteCartItem(id);
       setCartItems((items) => items.filter((item) => item.id !== id));
       dispatch(removeFromCart(id));
-      toast.success("Xóa sản phẩm thành công!", { theme: "colored" });
+      toast.success("Xóa sản phẩm thành công!");
     } catch (error) {
-      toast.error("Xóa sản phẩm thất bại. Vui lòng thử lại!", {
-        theme: "colored",
-      });
+      toast.error("Xóa sản phẩm thất bại. Vui lòng thử lại!");
     }
   };
 
@@ -232,7 +231,7 @@ const Cart = () => {
           : "",
       promoCode: promoApplied ? "WELCOME10" : null,
     };
-    localStorage.setItem("orderData", JSON.stringify(orderData));
+    dispatch(setCheckoutData(orderData));
   };
 
   if (isLoading) {

@@ -1,16 +1,12 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
-import { logout } from "../redux/authSlice";
+import { useDispatch, useSelector } from "react-redux";
 import {
   Menu,
   X,
   Search,
   ShoppingCart,
   User,
-  Heart,
   MapPin,
   Phone,
   Clock,
@@ -21,41 +17,33 @@ import {
   Mail,
   Wallet,
   LogOut,
-  Settings,
   UserCircle,
-  Bell,
   ChevronDown,
+  Users,
+  TvMinimal,
 } from "lucide-react";
+import { logout } from "../redux/slices/authSlice";
+import { clearCart } from "../redux/slices/cartSlice";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [localUser, setLocalUser] = useState(null);
   const location = useLocation();
-  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  // Lấy user từ localStorage để cập nhật ví khi reload
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setLocalUser(JSON.parse(storedUser));
-    }
-  }, []);
+  const { user, isAuthenticated, role } = useSelector((state) => state.auth);
+  const walletBalance = user?.wallet ?? 0;
 
-  // Lấy user từ redux hoặc localStorage (ưu tiên redux nếu đã login)
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const walletBalance = user?.wallet ?? localUser?.wallet ?? 0;
-  console.log("User wallet balance:", walletBalance);
-
-  // Get cart items from Redux
   const cartItems = useSelector((state) => state.cart.cartItems);
+  console.log("Cart items:", cartItems);
   const cartCount = cartItems?.length || 0;
 
   const getUserDisplayName = () => {
     if (user?.fullName) return user.fullName;
+
     return "Khách Hàng";
   };
 
@@ -97,6 +85,7 @@ const Navbar = () => {
     { path: "/", name: "Trang Chủ", nameEn: "Home", icon: Home },
     { path: "/menu", name: "Thực Đơn", nameEn: "Menu", icon: UtensilsCrossed },
     { path: "/about", name: "Về Chúng Tôi", nameEn: "About", icon: Info },
+    { path: "/location", name: "Vị Trí", nameEn: "Location", icon: MapPin },
     { path: "/contact", name: "Liên Hệ", nameEn: "Contact", icon: Mail },
   ];
 
@@ -110,9 +99,9 @@ const Navbar = () => {
     }).format(amount);
   };
 
-  // Handle logout
   const handleLogout = () => {
     dispatch(logout());
+    dispatch(clearCart());
     setShowUserMenu(false);
     navigate("/");
   };
@@ -181,11 +170,9 @@ const Navbar = () => {
               })}
             </div>
 
-            {/* Right Side Actions */}
             <div className="flex items-center gap-3">
-              {/* Wallet - Only show if authenticated */}
-              {isAuthenticated && (
-                <div
+              {/* {isAuthenticated && role && (
+                <Link
                   to="/wallet"
                   className="hidden sm:flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-full transition-all duration-300 border border-gray-200 hover:border-green-200"
                 >
@@ -193,23 +180,45 @@ const Navbar = () => {
                   <span className="text-sm font-medium">
                     {formatCurrency(walletBalance)}
                   </span>
-                </div>
+                </Link>
+              )} */}
+
+              {isAuthenticated && role && (
+                <Link
+                  to="/cart"
+                  className="p-3 text-gray-600 hover:text-amber-700 hover:bg-amber-50 rounded-full transition-all duration-300 relative"
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                  {cartCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
+                      {cartCount}
+                    </span>
+                  )}
+                </Link>
               )}
 
-              {/* Cart */}
-              <Link
-                to="/cart"
-                className="p-3 text-gray-600 hover:text-amber-700 hover:bg-amber-50 rounded-full transition-all duration-300 relative"
-              >
-                <ShoppingCart className="w-5 h-5" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
-                    {cartCount}
-                  </span>
-                )}
-              </Link>
+              {isAuthenticated && (role === "STAFF" || role === "ADMIN") && (
+                <Link
+                  to="/pos"
+                  onClick={() => setShowUserMenu(false)}
+                  className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-emerald-100 hover:text-emerald-700 border border-emerald-400 hover:border-emerald-700 rounded-full transition-all duration-300"
+                >
+                  <TvMinimal className="w-5 h-5" />
+                  <span>POS</span>
+                </Link>
+              )}
 
-              {/* User Account - Show different options based on auth status */}
+              {isAuthenticated && role === "ADMIN" && (
+                <Link
+                  to="/manager"
+                  onClick={() => setShowUserMenu(false)}
+                  className="flex items-center gap-3 px-4 py-2 text-gray-700 border border-amber-400  hover:bg-amber-50  hover:text-amber-700 rounded-full transition-all duration-300"
+                >
+                  <Users className="w-5 h-5" />
+                  <span>Quản Lý</span>
+                </Link>
+              )}
+
               {!isAuthenticated ? (
                 // Not logged in - show login/register buttons
                 <div className="hidden sm:flex gap-2">
@@ -250,7 +259,6 @@ const Navbar = () => {
                           {getUserDisplayName()}
                         </p>
                       </div>
-
                       <div className="py-1">
                         <Link
                           to="/profile"
@@ -262,30 +270,12 @@ const Navbar = () => {
                         </Link>
 
                         <Link
-                          to="/orders-history"
+                          to="/profile/orders-history"
                           onClick={() => setShowUserMenu(false)}
                           className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-amber-50 hover:text-amber-700"
                         >
                           <ShoppingCart className="w-5 h-5" />
                           <span>Đơn Hàng</span>
-                        </Link>
-
-                        <Link
-                          to="/notifications"
-                          onClick={() => setShowUserMenu(false)}
-                          className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-amber-50 hover:text-amber-700"
-                        >
-                          <Bell className="w-5 h-5" />
-                          <span>Thông Báo</span>
-                        </Link>
-
-                        <Link
-                          to="/settings"
-                          onClick={() => setShowUserMenu(false)}
-                          className="flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-amber-50 hover:text-amber-700"
-                        >
-                          <Settings className="w-5 h-5" />
-                          <span>Cài Đặt</span>
                         </Link>
                       </div>
 
@@ -370,7 +360,6 @@ const Navbar = () => {
               {/* Mobile Account Actions */}
               <div className="mt-6 pt-4 border-t border-gray-200">
                 {isAuthenticated ? (
-                  // Logged in user options
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-2xl">
                       <div className="w-12 h-12 bg-gradient-to-br from-amber-600 to-amber-700 rounded-full flex items-center justify-center text-white font-bold">
@@ -386,7 +375,7 @@ const Navbar = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       {isAuthenticated && (
                         <Link
                           to="/wallet"
@@ -409,17 +398,6 @@ const Navbar = () => {
                         <UserCircle className="w-4 h-4" />
                         <span className="text-xs">Tài Khoản</span>
                       </Link>
-
-                      {isAuthenticated && (
-                        <Link
-                          to="/favorites"
-                          onClick={() => setIsOpen(false)}
-                          className="flex flex-col items-center justify-center gap-1 px-3 py-3 bg-red-50 text-red-600 rounded-2xl font-medium hover:bg-red-100 transition-colors"
-                        >
-                          <Heart className="w-4 h-4" />
-                          <span className="text-xs">Yêu Thích</span>
-                        </Link>
-                      )}
                     </div>
 
                     <button

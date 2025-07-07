@@ -4,10 +4,10 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Coffee, User, Lock, ArrowRight } from "lucide-react";
 import { useDispatch } from "react-redux";
-import { login } from "../redux/authSlice";
+import { login } from "../redux/slices/authSlice";
 import { toast } from "react-toastify";
 import cartService from "../services/cart.service";
-import { setCartInfo } from "../redux/cartSilce";
+import { setCartInfo } from "../redux/slices/cartSlice";
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -57,9 +57,6 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
-      toast.error("Vui lòng kiểm tra thông tin đăng nhập", {
-        theme: "colored",
-      });
       return;
     }
 
@@ -67,15 +64,18 @@ const Login = () => {
 
     try {
       const resultAction = await dispatch(
-        login({ username: formData.username, password: formData.password })
+        login({
+          username: formData.username.toLocaleLowerCase(),
+          password: formData.password,
+        })
       );
-      // Kiểm tra login thành công
       if (
         resultAction.meta.requestStatus === "fulfilled" &&
         resultAction.payload.status === 200
       ) {
         try {
           const res = await cartService.getCart();
+          console.log(res);
           if (res && res?.data) {
             dispatch(setCartInfo(res?.data));
           }
@@ -84,14 +84,13 @@ const Login = () => {
             theme: "colored",
           });
         }
-        toast.success("Đăng nhập thành công!", { theme: "colored" });
+        toast.success("Đăng nhập thành công!");
         setTimeout(() => navigate("/menu", { replace: true }), 500);
       } else {
-        throw new Error("Đăng nhập thất bại");
+        throw new Error(resultAction.payload);
       }
     } catch (err) {
       setErrors({ general: err.message });
-      toast.error(err.message, { theme: "colored" });
     } finally {
       setIsLoading(false);
     }
